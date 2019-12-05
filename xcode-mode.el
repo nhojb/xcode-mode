@@ -79,57 +79,46 @@
   "Build SCHEME."
   (interactive (list (read-string "Build scheme: " (car xcode-mode--scheme-history) '(xcode-mode--scheme-history . 1))))
   (message (format "Building %s" scheme))
-  (xcode-mode--compile (format "xcodebuild -scheme %s" scheme) xcode-mode-xcpretty)
-  )
+  (xcode-mode--compile (format "xcodebuild -scheme %s" scheme)))
 
 (defun xcode-mode-clean(scheme)
   "Run a build clean for SCHEME."
   (interactive (list (read-string "Clean scheme: " (car xcode-mode--scheme-history) '(xcode-mode--scheme-history . 1))))
   (message (format "Cleaning %s" scheme))
   (if (string= scheme "")
-      (xcode-mode--compile "xcodebuild clean" xcode-mode-xcpretty)
-    (xcode-mode--compile (format "xcodebuild clean -scheme %s" scheme) xcode-mode-xcpretty))
-  )
+      (xcode-mode--compile "xcodebuild clean")
+    (xcode-mode--compile (format "xcodebuild clean -scheme %s" scheme))))
 
 (defun xcode-mode-analyze(scheme)
   "Run an analysis build for SCHEME."
   (interactive (list (read-string "Analyze scheme: " (car xcode-mode--scheme-history) '(xcode-mode--scheme-history . 1))))
   (message (format "Analyzing %s" scheme))
-  (xcode-mode--compile (format "xcodebuild analyze -scheme %s" scheme) xcode-mode-xcpretty)
-  )
+  (xcode-mode--compile (format "xcodebuild analyze -scheme %s" scheme)))
 
 (defun xcode-mode-archive(scheme)
   "Run an archive build for SCHEME."
   (interactive (list (read-string "Archive scheme: " (car xcode-mode--scheme-history) '(xcode-mode--scheme-history . 1))))
   (message (format "Archiving %s" scheme))
-  (xcode-mode--compile (format "xcodebuild archive -scheme %s" scheme) xcode-mode-xcpretty)
-  )
+  (xcode-mode--compile (format "xcodebuild archive -scheme %s" scheme)))
 
 (defun xcode-mode-test(scheme)
   "Run all test methods for SCHEME."
   (interactive (list (read-string "Test scheme: " (car xcode-mode--scheme-history) '(xcode-mode--scheme-history . 1))))
   (message (format "Testing %s" scheme))
-  (let ((cmd (format "xcodebuild test -scheme %s" scheme)))
-    (if xcode-mode-xcpretty
-        (xcode-mode--compile (concat cmd " | xcpretty -k"))
-      (xcode-mode--compile cmd))))
+  (xcode-mode--compile (format "xcodebuild test -scheme %s" scheme) "-k"))
 
 (defun xcode-mode-test-one(target)
   "Run a single test case for TARGET."
   (interactive (list (read-string "Test one [Scheme/Class/Method]: " (car xcode-mode--test-history) '(xcode-mode--test-history . 1))))
   (message (format "Testing %s" target))
   (let ((cmd (format "xcodebuild test -scheme %s -only-testing:%s" (car (split-string target "/")) target)))
-    (if xcode-mode-xcpretty
-        (xcode-mode--compile (concat cmd " | xcpretty -k"))
-      (xcode-mode--compile cmd)))
-  )
+      (xcode-mode--compile cmd "-k")))
 
 (defun xcode-run()
   "Run the active scheme in the active workspace."
   (interactive)
   (message "Running...")
-  (shell-command "osascript -e 'tell application \"Xcode\" to run active workspace document'")
-  )
+  (shell-command "osascript -e 'tell application \"Xcode\" to run active workspace document'"))
 
 (defun xcode-search-docs(str)
   "Search for STR in Xcode documentation browser.
@@ -155,12 +144,12 @@ Uses `locate-dominating-file`, falling back to the current directory."
        (lambda (dir) (directory-files dir nil ".+\\.xcodeproj")))
       default-directory))
 
-(defun xcode-mode--compile (command &optional xcpretty)
+(defun xcode-mode--compile (command &optional xcpretty-args)
   "Compile COMMAND in the current Xcode project.
-If XCPRETTY is non-nil, pipes output through xcpretty."
+If XCPRETTY-ARGS are non-nil they are used instead of the defaults."
   (let ((default-directory (xcode-mode--project-directory)))
     (if (xcode-mode--use-xcpretty)
-        (compile (concat command " | xcpretty --no-color"))
+        (compile (format "%s | xcpretty %s" command (or xcpretty-args "--no-color")))
       (compile command))))
 
 (defun xcode-mode--use-xcpretty ()
